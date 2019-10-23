@@ -1,6 +1,7 @@
 package by.lwo.graphqlrouter.controller;
 
 import by.lwo.graphqlrouter.utility.GraphUtility;
+import by.lwo.graphqlrouter.utility.RestMediaType;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.introspection.IntrospectionQuery;
@@ -31,12 +32,13 @@ public class SchemaController {
     @Value("${string.urls.graphqls}")
     private String[] urlArray;
 
-    private final String HEADER_NAME = "Router-Value";
+    @Value("${string.router.header}")
+    private String HEADER_NAME;
 
     private final RestTemplate restTemplate;
     private final HttpServletRequest request;
 
-    @PostMapping(value = "/schema", produces = "application/json;charset=UTF-8")
+    @PostMapping(value = "/schema", produces = RestMediaType.APLICATION_JSON_VALUE_UTF8)
     public Object test() {
         List<String> urls = Arrays.asList(urlArray);
         TypeDefinitionRegistry t = GraphUtility.getMergedSchema(urls, restTemplate);
@@ -50,16 +52,16 @@ public class SchemaController {
 
     @PostMapping("/query")
     public String getQuery(@RequestBody(required = false) String body) {
-        int r;
+        int routerCalue;
         String route = request.getHeader(HEADER_NAME);
         try {
-            r = Integer.parseInt(route);
+            routerCalue = Integer.parseInt(route);
         } catch (NumberFormatException e) {
-            r = -1;
+            routerCalue = -1;
         }
         ResponseEntity<String> response = ResponseEntity.badRequest().build();
-        if (Optional.ofNullable(body).isPresent() && r >= 0 && r < urlArray.length) {
-            URI url = URI.create(urlArray[r]);
+        if (Optional.ofNullable(body).isPresent() && routerCalue >= 0 && routerCalue < urlArray.length) {
+            URI url = URI.create(urlArray[routerCalue]);
             RequestEntity<String> request = RequestEntity.post(url).body(body);
             response = restTemplate
                     .exchange(request, String.class);
