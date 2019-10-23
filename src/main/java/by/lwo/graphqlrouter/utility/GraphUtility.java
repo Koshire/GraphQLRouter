@@ -1,5 +1,6 @@
 package by.lwo.graphqlrouter.utility;
 
+import by.lwo.graphqlrouter.utility.interfaces.GraphQlServiceQuery;
 import graphql.introspection.IntrospectionResultToSchema;
 import graphql.language.Document;
 import graphql.language.FieldDefinition;

@@ -1,4 +1,4 @@
-package by.lwo.graphqlrouter.utility;
+package by.lwo.graphqlrouter.utility.interfaces;
 
 
 public interface GraphQlServiceQuery {

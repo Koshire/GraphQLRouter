@@ -1,7 +1,7 @@
 package by.lwo.graphqlrouter.controller;
 
 import by.lwo.graphqlrouter.utility.GraphUtility;
-import by.lwo.graphqlrouter.utility.RestMediaType;
+import by.lwo.graphqlrouter.utility.interfaces.RestMediaType;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.introspection.IntrospectionQuery;
@@ -14,9 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
@@ -38,34 +36,38 @@ public class SchemaController {
     private final RestTemplate restTemplate;
     private final HttpServletRequest request;
 
-    @PostMapping(value = "/schema", produces = RestMediaType.APLICATION_JSON_VALUE_UTF8)
-    public Object test() {
+    private Object getSchema() {
         List<String> urls = Arrays.asList(urlArray);
-        TypeDefinitionRegistry t = GraphUtility.getMergedSchema(urls, restTemplate);
+        TypeDefinitionRegistry mergedSchema = GraphUtility.getMergedSchema(urls, restTemplate);
         RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring().build();
         SchemaGenerator generator = new SchemaGenerator();
-        GraphQLSchema schema = generator.makeExecutableSchema(t, runtimeWiring);
+        GraphQLSchema schema = generator.makeExecutableSchema(mergedSchema, runtimeWiring);
         GraphQL graphQL = GraphQL.newGraphQL(schema).build();
         ExecutionResult execute = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY);
         return execute.getData();
     }
 
-    @PostMapping("/query")
-    public String getQuery(@RequestBody(required = false) String body) {
-        int routerCalue;
+    private Object getQuery (String body) {
+        int routerValue;
         String route = request.getHeader(HEADER_NAME);
         try {
-            routerCalue = Integer.parseInt(route);
+            routerValue = Integer.parseInt(route);
         } catch (NumberFormatException e) {
-            routerCalue = -1;
+            routerValue = -1;
         }
         ResponseEntity<String> response = ResponseEntity.badRequest().build();
-        if (Optional.ofNullable(body).isPresent() && routerCalue >= 0 && routerCalue < urlArray.length) {
-            URI url = URI.create(urlArray[routerCalue]);
+        if (Optional.ofNullable(body).isPresent() && routerValue >= 0 && routerValue < urlArray.length) {
+            URI url = URI.create(urlArray[routerValue]);
             RequestEntity<String> request = RequestEntity.post(url).body(body);
             response = restTemplate
                     .exchange(request, String.class);
         }
         return response.getBody();
+    }
+
+    @PostMapping(value = "/query", produces = RestMediaType.APLICATION_JSON_VALUE_UTF8)
+    public Object getQuery(@RequestBody(required = false) String body,
+                           @RequestParam(value = "schema", required = false) boolean schema) {
+        return schema ? getSchema(): getQuery(body);
     }
 }
